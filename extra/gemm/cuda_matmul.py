@@ -1,7 +1,7 @@
 import os
 import numpy as np
 os.environ["CUDA"] = "1"
-from tinygrad.runtime.ops_cuda import CUDAAllocator, CUDADevice, CUDAProgram, compile_cuda
+from tinygrad.runtime.ops_cuda import CUDAAllocator, CUDADevice, CUDAProgram, CUDACompiler
 from tinygrad.helpers import flat_mv
 
 FLOAT16 = True
@@ -18,6 +18,7 @@ if FLOAT16:
 
 device = CUDADevice("cuda:0")
 cudaalloc = CUDAAllocator(device)
+compiler = CUDACompiler(arch=device.arch)
 
 a = cudaalloc.alloc(N*N*2 if FLOAT16 else N*N*4)
 b = cudaalloc.alloc(N*N*2 if FLOAT16 else N*N*4)
@@ -29,7 +30,7 @@ cudaalloc.copyin(b, bytearray(nb))
 FLOPS = N*N*N*2
 BW = N*N*3*4
 
-prog = CUDAProgram(device, "wmma_example", compile_cuda(f"""
+prog = CUDAProgram(device, "wmma_example", compiler.compile(f"""
 #include <mma.h>
 using namespace nvcuda;
 
